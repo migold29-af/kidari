@@ -1,0 +1,5 @@
+out/
+config.local.json
+*.eml
+*.xlsx
+__pycache__/

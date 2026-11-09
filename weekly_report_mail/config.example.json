@@ -1,0 +1,22 @@
+{
+  "_comment": "이 파일을 config.local.json 으로 복사해 이름·서명·수신자를 채우세요. config.local.json 은 git에 올라가지 않습니다(.gitignore). 연락처·메일주소는 이 예시 파일에 적지 마세요.",
+  "dept": "플랫폼기획부",
+  "subject_format": "[{dept}] {period} 주간보고",
+  "sender": {
+    "name": "OOO"
+  },
+  "recipients": {
+    "to": ["받는사람1 <id1@example.com>", "받는사람2 <id2@example.com>"],
+    "cc": ["참조1 <cc1@example.com>"]
+  },
+  "links": [
+    {"label": "사업-개발 로드맵 및 진행 현황", "url": "https://kidari.atlassian.net/wiki/x/3Ijeng", "text": "링크"},
+    {"label": "플랫폼기획부 업무 보드", "url": "https://kidari.atlassian.net/jira/core/projects/PLATFORMP/board?filter=&groupBy=none", "text": "링크"}
+  ],
+  "shared": [
+    {"label": "소설 강화 WBS", "url": "https://docs.google.com/spreadsheets/d/16mt41ahnNBwSFBMyPdXQI3TwUrFHVg6icKo0p84B7d8/edit?gid=549805459#gid=549805459"}
+  ],
+  "closing": ["이상입니다.", "감사합니다."],
+  "signature_html": "",
+  "signature_text": ""
+}

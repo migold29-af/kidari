@@ -1,0 +1,3 @@
+# 월간 지표 리포트 메일: 초안(eml)·첨부 PDF는 커밋하지 않음
+reports/kpi-mail/**/*.eml
+reports/kpi-mail/**/*.pdf

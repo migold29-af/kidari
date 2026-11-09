@@ -186,13 +186,21 @@ def cell_html(field: str, value: str, *, rowspan: int = 1) -> str:
     return f'<td{rs} style="{style}">{content}</td>'
 
 
-def render_table(section: dict) -> str:
+# 메일에 표시하지 않는 열 (데이터에는 남겨 둔다). 설정 파일 "hide_columns" 로 바꿀 수 있다.
+DEFAULT_HIDDEN = ["type"]   # 구분(PROJECT/TASK/DESIGN/DATA) 열은 메일에서 생략
+
+
+def render_table(section: dict, hidden=()) -> str:
     key = section_key(section.get("title", ""))
     headers = section.get("headers") or DEFAULT_HEADERS.get(key) or DEFAULT_HEADERS["PROJECT"]
-    total = sum(COL_WIDTHS)
-    cols = "".join(f'<col width="{w}">' for w in COL_WIDTHS)
+    keep = [i for i, f in enumerate(FIELDS) if f not in hidden]
+    fields = [FIELDS[i] for i in keep]
+    headers = [headers[i] if i < len(headers) else "" for i in keep]
+    widths = [COL_WIDTHS[i] for i in keep]
+    total = sum(widths)
+    cols = "".join(f'<col width="{w}">' for w in widths)
     head = "".join(
-        f'<td style="{td_style(FIELDS[i], header=True, last=(i == len(headers) - 1))}">'
+        f'<td style="{td_style(fields[i], header=True, last=(i == len(headers) - 1))}">'
         f'{rich(h)}</td>' for i, h in enumerate(headers))
     rows_html = []
     for idx, row in enumerate(section.get("rows", []), 1):
@@ -202,12 +210,12 @@ def render_table(section: dict) -> str:
         if steps:
             n = len(steps)
             first = "".join(cell_html(f, row.get(f, ""), rowspan=n)
-                            for f in FIELDS if f not in STEP_FIELDS)
+                            for f in fields if f not in STEP_FIELDS)
             for si, step in enumerate(steps):
-                cells = "".join(cell_html(f, step.get(f, "")) for f in STEP_FIELDS)
+                cells = "".join(cell_html(f, step.get(f, "")) for f in fields if f in STEP_FIELDS)
                 rows_html.append(f"<tr>{first if si == 0 else ''}{cells}</tr>")
         else:
-            rows_html.append("<tr>" + "".join(cell_html(f, row.get(f, "")) for f in FIELDS) + "</tr>")
+            rows_html.append("<tr>" + "".join(cell_html(f, row.get(f, "")) for f in fields) + "</tr>")
     return (f'<table cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;'
             f'table-layout:fixed;width:{total}px;font-size:10pt;font-family:{FONT};">'
             f"<colgroup>{cols}</colgroup><tbody><tr>{head}</tr>{''.join(rows_html)}</tbody></table>")
@@ -259,7 +267,7 @@ def render_body(rep: dict, cfg: dict) -> str:
         if not sec.get("rows"):
             continue
         parts += [BLANK, p(f'<b>[{html.escape(section_key(sec["title"]))}]</b>', "font-size:12pt;"), BLANK,
-                  render_table(sec), BLANK]
+                  render_table(sec, cfg.get("hide_columns", DEFAULT_HIDDEN)), BLANK]
 
     closing = rep.get("closing") or cfg.get("closing") or ["이상입니다.", "감사합니다."]
     parts += [BLANK] + [p(html.escape(c)) for c in closing]
@@ -297,7 +305,9 @@ def render_text(rep: dict, cfg: dict) -> str:
             continue
         out += ["", f"[{section_key(sec['title'])}]", ""]
         for idx, r in enumerate(sec["rows"], 1):
-            head = " | ".join(x for x in [r.get("no") or str(idx), r.get("type", ""), r.get("jira", ""),
+            head = " | ".join(x for x in [r.get("no") or str(idx),
+                                          "" if "type" in cfg.get("hide_columns", DEFAULT_HIDDEN) else r.get("type", ""),
+                                          r.get("jira", ""),
                                          r.get("platform", ""), clean(r.get("project", "")).replace("\n", " ")] if x)
             out.append(f"{head}")
             steps = r.get("steps") or [r]

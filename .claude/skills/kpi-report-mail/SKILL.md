@@ -12,7 +12,7 @@ description: 봄툰KR 월간 지표 리포트(Amplitude Monthly KPI 대시보드
 
 | 파일 | 역할 |
 |---|---|
-| `build_mail.py` | content.json → `mail.html`(붙여넣기용) · `mail.eml`(초안, PDF 첨부) · `mail.txt` 생성. 표준 라이브러리만 사용 |
+| `build_mail.py` | content.json → `copy.html`(복사 버튼 페이지, Artifact 게시용) · `mail.html`(미리보기) · `mail.eml`(초안, PDF 첨부) · `mail.txt` 생성. 표준 라이브러리만 사용 |
 | `config.json` | 매월 같은 값: 수신자(To/Cc), 제목 형식, 인트로·맺음말 문구, 대시보드 링크, 데이터분석 담당자 |
 | `examples/2026-06.json` | 6월호 원본을 옮긴 예시. **문체·구조·분량의 기준** |
 
@@ -31,11 +31,11 @@ description: 봄툰KR 월간 지표 리포트(Amplitude Monthly KPI 대시보드
    python3 .claude/skills/kpi-report-mail/build_mail.py reports/kpi-mail/YYYY-MM/content.json --attach "<대시보드 PDF 경로>"
    ```
 5. **검토.** `mail.html`을 Playwright로 스크린샷해 표·차트가 깨지지 않았는지 보고, 본문 수치를 원본과 한 번 더 대조한다.
-6. **전달.** `SendUserFile`로 `mail.html`(render)과 `mail.eml`(attach)을 보내고, 채팅에는 아래만 짧게 적는다.
+6. **전달.** `copy.html`을 Artifact로 게시해 링크를 준다(icon: mail). 사용자는 이 페이지의 **본문 복사** 버튼으로 서식째 복사해 사내 메일에 붙여넣는다. `mail.eml`은 `SendUserFile`(attach)로 함께 보낸다. 채팅에는 아래만 짧게 적는다.
    - 제목, 핵심 요약 3줄
    - 확인이 필요한 항목(리포트에 없어 비운 값, 증감율 불일치, 역산한 차트 값 등)
    - 발송 방법: ① `mail.eml`을 Outlook 등에서 열면 수신자·첨부가 채워진 초안으로 열림 ② 사내 웹메일은 `mail.html`을 브라우저로 열어 본문만 복사해 에디터에 붙여넣고, 수신자·PDF는 직접 넣음
-7. **커밋.** `content.json`, `mail.html`, `mail.txt`만 커밋한다(`.eml`, PDF는 `.gitignore` 대상).
+7. **커밋.** `content.json`, `copy.html`, `mail.html`, `mail.txt`만 커밋한다(`.eml`, PDF는 `.gitignore` 대상).
 
 ## 메일 구조 (순서 고정)
 

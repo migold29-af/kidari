@@ -316,6 +316,85 @@ def build(content: dict, cfg: dict, base_dir: Path, attach: Path | None):
     return subject, body_html, body_txt, imgs, pm
 
 
+COPY_PAGE = r"""<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* layout: 상단 = 제목·수신자·복사 버튼 / 하단 = 메일 본문(흰 종이, 메일에 들어갈 모습 그대로) */
+:root{--bg:#f3f5f8;--panel:#ffffff;--fg:#1d2330;--muted:#5d6676;--line:#dde2ea;--accent:#2f6fdb;--accent-fg:#ffffff;--ok:#1f8a4c;
+--ui:'Noto Sans KR','맑은 고딕','Malgun Gothic',system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a22;--panel:#1e2530;--fg:#e6eaf0;--muted:#9aa4b4;--line:#323b49;--accent:#5b8ff0;--accent-fg:#0d1220;--ok:#4cc584;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151a22;--panel:#1e2530;--fg:#e6eaf0;--muted:#9aa4b4;--line:#323b49;--accent:#5b8ff0;--accent-fg:#0d1220;--ok:#4cc584;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:14px;padding-block:20px 40px;
+padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:18px;font-weight:700;margin:0;text-wrap:balance}
+.lead{color:var(--muted);margin:4px 0 0;line-height:1.6}
+.meta{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 16px}
+.row{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row dt{color:var(--muted);font-size:12px;letter-spacing:.04em;padding-top:2px}
+.row dd{margin:0;line-height:1.6;word-break:break-all}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:5px 12px;font-size:13px;white-space:nowrap}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700;font-size:15px;padding:12px 20px}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.status{color:var(--ok);font-weight:500;min-height:1.4em}
+.paper-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.paper{background:#ffffff;color:#222222;padding:24px;min-width:0}
+@media (max-width:520px){.row{grid-template-columns:minmax(0,1fr) auto}.row dt{grid-column:1/-1}}
+</style>
+<div class="wrap">
+  <header>
+    <h1>__TITLE__</h1>
+    <p class="lead">① <b>본문 복사</b>를 누르고 사내 메일 에디터에 붙여넣기(Ctrl+V) ② 제목·받는 사람·참조는 옆의 복사 버튼으로 넣기__ATTACH_HINT__</p>
+  </header>
+  <dl class="meta">
+    <div class="row"><dt>제목</dt><dd id="v-subject">__SUBJECT__</dd><button data-copy="v-subject">복사</button></div>
+    <div class="row"><dt>받는 사람</dt><dd id="v-to">__TO__</dd><button data-copy="v-to">복사</button></div>
+    <div class="row"><dt>참조</dt><dd id="v-cc">__CC__</dd><button data-copy="v-cc">복사</button></div>
+  </dl>
+  <div class="bar"><button class="primary" id="copy-body">본문 복사</button><span class="status" id="status" role="status"></span></div>
+  <div class="paper-scroll"><div class="paper" id="mail-body">__BODY__</div></div>
+</div>
+<script>
+const statusEl=document.getElementById('status');
+function say(t){statusEl.textContent=t;clearTimeout(say.t);say.t=setTimeout(()=>statusEl.textContent='',4000)}
+function selectEl(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+function legacyCopy(el){selectEl(el);let ok=false;try{ok=document.execCommand('copy')}catch(e){}return ok}
+document.getElementById('copy-body').addEventListener('click',async()=>{
+  const el=document.getElementById('mail-body');
+  try{
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html':new Blob([el.innerHTML],{type:'text/html'}),
+      'text/plain':new Blob([el.innerText],{type:'text/plain'})})]);
+    say('본문을 복사했습니다. 메일 에디터에 붙여넣으세요.');
+  }catch(e){
+    if(legacyCopy(el)){getSelection().removeAllRanges();say('본문을 복사했습니다. 메일 에디터에 붙여넣으세요.')}
+    else say('본문을 선택해 두었습니다. Ctrl+C(⌘C)로 복사하세요.');
+  }
+});
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{
+  const el=document.getElementById(b.dataset.copy);
+  try{await navigator.clipboard.writeText(el.innerText);say('복사했습니다.')}
+  catch(e){if(legacyCopy(el)){getSelection().removeAllRanges();say('복사했습니다.')}else say('선택해 두었습니다. Ctrl+C(⌘C)로 복사하세요.')}
+}));
+</script>
+"""
+
+
+def write_copy_page(out: Path, subject: str, body_html: str, cfg: dict, attach: Path | None, m: int):
+    """웹에서 열어 '본문 복사' 버튼으로 서식째 복사하는 페이지 (Artifact 게시용)."""
+    hint = f" ③ 첨부: {html.escape(attach.name)}" if attach else ""
+    page = (COPY_PAGE.replace("__TITLE__", f"{m}월 지표 리포트 메일")
+            .replace("__ATTACH_HINT__", hint)
+            .replace("__SUBJECT__", html.escape(subject))
+            .replace("__TO__", html.escape(", ".join(cfg.get("to", []))))
+            .replace("__CC__", html.escape(", ".join(cfg.get("cc", []))))
+            .replace("__BODY__", body_html))
+    (out / "copy.html").write_text(page, encoding="utf-8")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("content")
@@ -347,6 +426,7 @@ def main():
             f"{body_html}</body></html>")
     (out / "mail.html").write_text(page, encoding="utf-8")
     (out / "mail.txt").write_text(f"제목: {subject}\n\n{body_txt}", encoding="utf-8")
+    write_copy_page(out, subject, body_html, cfg, attach, content["month"])
 
     # EML (초안)
     msg = EmailMessage()
@@ -373,7 +453,7 @@ def main():
     (out / "mail.eml").write_bytes(bytes(msg))
 
     print(f"제목: {subject}")
-    for f in ("mail.html", "mail.eml", "mail.txt"):
+    for f in ("copy.html", "mail.html", "mail.eml", "mail.txt"):
         print(f"생성: {out / f}")
 
 

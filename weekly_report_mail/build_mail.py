@@ -793,6 +793,12 @@ def finalize(rep: dict, cfg: dict, args) -> dict:
 
 
 def main(argv=None):
+    # Windows 콘솔(cp949)에서도 한글/이모지 출력이 깨지지 않도록
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
     ap = argparse.ArgumentParser(description="플랫폼기획부 주간보고 메일 생성기")
     sub = ap.add_subparsers(dest="cmd", required=True)
 

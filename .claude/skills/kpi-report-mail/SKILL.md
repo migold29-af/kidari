@@ -19,7 +19,7 @@ description: 봄툰KR 월간 지표 리포트(Amplitude Monthly KPI 대시보드
 ## 절차
 
 1. **입력 확인.** 받을 수 있는 입력:
-   - 컨플루언스 지표 분석 리포트 링크 → Atlassian 도구(`getConfluencePage`)로 본문을 읽는다
+   - 컨플루언스 지표 분석 리포트 링크 → Atlassian MCP `fetch`에 ARI `ari:cloud:confluence:e266771a-4fdd-48be-b482-7b297b8940a8:page/<페이지ID>`를 넣어 읽는다. (`getConfluencePage`는 IP 제한으로 막힘. 페이지 ID는 URL `/pages/<숫자>/`)
    - Amplitude 대시보드 PDF → `pdftotext -layout`으로 수치를 읽고, 차트만 있는 페이지는 이미지로 확인
    - 붙여넣은 텍스트·표·캡처 이미지
    - 대상 월, 컨플루언스 링크, 첨부할 PDF가 빠졌으면 한 번에 모아서 묻는다. 대시보드 링크는 config 값을 기본으로 쓴다.
@@ -48,7 +48,8 @@ description: 봄툰KR 월간 지표 리포트(Amplitude Monthly KPI 대시보드
 4. `📊 주요 지표` — `sections` (리포트 목차를 따르되 기본은 아래)
    - `1. 방문 대비 전환율`
    - `2. 회차 리스트 핵심 유입 영역` (Top10 표 + 차트)
-   - `2-1. 내 서재 탭별` · `2-2. 웹툰 메인 구좌별` · `2-3. 검색 방법 별`(+검색어 Top 작품) · `2-4. 웹툰 메인 배너 별`(+유입 상위 작품)
+   - `2-1. 내 서재 탭별` · `2-2. 웹툰 메인 구좌별` · `2-3. 검색 방법 별`(+검색어 Top 작품) · `2-4~` 리포트에 있는 하위 항목(배너·상단메뉴·이벤트페이지 등)
+   - 용어는 리포트를 따른다 (10월부터 '회차리스트' → '작품상세')
    - 각 섹션: `bullets` 1~2개 + `callout` 1개(가장 중요한 시사점, 노란 하이라이트) + 차트/표 + `notes`
 5. 맺음말 + 데이터분석 담당자 (config)
 
@@ -77,6 +78,8 @@ description: 봄툰KR 월간 지표 리포트(Amplitude Monthly KPI 대시보드
   "confluence_url": "...", "confluence_title": "7월 지표 분석 리포트",
   "dashboard_url": "(생략 시 config 값)",
   "subject": "(생략 시 config 형식으로 자동 생성)",
+  "notice": "(선택) 리포트 상단 📢 안내사항 — 링크 아래 주황 박스",
+  "footnote": "(선택) 데이터 기준 각주 — 맺음말 위 이탤릭",
   "summary": { "headline": "", "bullets": [], "charts": [], "tables": [], "images": [] },
   "sections": [{
     "title": "1. 방문 대비 전환율",

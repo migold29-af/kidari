@@ -186,6 +186,13 @@ def render_box(bullets: list[str], callout: str | None) -> str:
             f'<tr><td style="{BASE}background:{C_BOX};padding:10px 14px;">{inner}</td></tr></table>')
 
 
+def render_notice(text: str) -> str:
+    """리포트 상단 '📢 안내사항' 박스 (예: 대시보드 종료 공지)."""
+    return (f'<table cellpadding="0" cellspacing="0" width="760" style="max-width:100%;margin:10px 0;">'
+            f'<tr><td style="{BASE}background:#fff4e5;border-left:4px solid #f5a623;padding:10px 14px;">'
+            f"<b>📢 안내사항</b><br>{inline(text)}</td></tr></table>")
+
+
 def render_section(sec: dict, base_dir: Path, imgs: list) -> str:
     h = [p(f'<b style="font-size:11pt;">{inline(sec["title"])}</b>', "margin-top:4px;")]
     if sec.get("bullets") or sec.get("callout"):
@@ -230,7 +237,8 @@ def build(content: dict, cfg: dict, base_dir: Path, attach: Path | None):
            f"{html.escape(cfg['intro_line'].format(service=svc))}</b>")]
     b.append(p(html.escape(cfg["intro_note"]).replace("\n", "<br>")))
     links = []
-    dash = content.get("dashboard_url") or cfg.get("dashboard_url")
+    # content에 dashboard_url 키가 있으면 그 값(빈 문자열 = 링크 생략), 없으면 config 값
+    dash = content["dashboard_url"] if "dashboard_url" in content else cfg.get("dashboard_url")
     if dash:
         sub = ""
         if attach_name:
@@ -243,6 +251,8 @@ def build(content: dict, cfg: dict, base_dir: Path, attach: Path | None):
     if links:
         b.append(f'<ul style="{BASE}margin:4px 0;padding-left:22px;">'
                  + "".join(f'<li style="{BASE}">{l}</li>' for l in links) + "</ul>")
+    if content.get("notice"):
+        b.append(render_notice(content["notice"]))
     b.append(spacer(2))
 
     # ---- 핵심 요약
@@ -266,6 +276,8 @@ def build(content: dict, cfg: dict, base_dir: Path, attach: Path | None):
         b.append(render_section(sec, base_dir, imgs))
 
     # ---- 맺음말
+    if content.get("footnote"):
+        b.append(p(f'<i style="color:#666;">{inline(content["footnote"])}</i>'))
     b.append(p(f"{RULE}<br><br>"))
     b.append(p(html.escape(cfg["closing_note"]).replace("\n", "<br>")))
     if cfg.get("analyst"):
@@ -286,11 +298,15 @@ def build(content: dict, cfg: dict, base_dir: Path, attach: Path | None):
         t.append(f"대시보드 링크: {dash}")
     if content.get("confluence_url"):
         t.append(f"컨플루언스 링크: {content['confluence_url']}")
+    if content.get("notice"):
+        t += ["", f"📢 안내사항: {plain(content['notice'])}"]
     t += ["", RULE, "✅ 핵심 요약", RULE, plain(s["headline"])]
     t += [f"- {plain(x)}" for x in s.get("bullets", [])]
     t += [table_text(x) for x in s.get("tables", [])]
     t += ["", RULE, "📊 주요 지표", RULE]
     t += [section_text(sec) + "\n" for sec in content.get("sections", [])]
+    if content.get("footnote"):
+        t.append(plain(content["footnote"]))
     t += [RULE, "", cfg["closing_note"]]
     if cfg.get("analyst"):
         t.append(f"- 데이터분석 담당자 : {cfg['analyst']}")
